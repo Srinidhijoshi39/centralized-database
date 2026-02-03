@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Details - {{ client_id }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin: 0;
+        }
+
+        .back-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: #5a67d8;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tr:nth-child(even):hover {
+            background: #e8f4f8;
+        }
+
+        .summary-header {
+            background: #2d3748;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-bar {
+            display: flex;
+            justify-content: space-around;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .summary-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .summary-label {
+            display: inline;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .summary-value {
+            display: inline;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-closed {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .duration-warning {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .empty-active {
+            opacity: 0.5;
+            background: #f3f4f6 !important;
+        }
+
+        .empty-active:hover {
+            background: #e5e7eb !important;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Session Details - {{ client_id }}</h1>
+            <a href="/view_data?db=daily_trading_sessions" class="back-btn">← Back to Daily Trading Sessions</a>
+        </div>
+
+        {% if summary %}
+        <div class="summary-header">
+            Sessions: {{ summary[0] }} | Active: {{ summary[2] }} | Trades: {{ summary[3] }} | Net PNL: ₹{{
+            "%.2f"|format(summary[4]) }} | Mode: {{ summary[5] }}
+        </div>
+        {% endif %}
+
+
+
+        <div class="table-container">
+            {% if rows and rows|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in columns %}
+                        <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr>
+                        {% for cell in row %}
+                        <td>{{ cell if cell else '' }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>No session details available for this client.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const clientId = '{{ client_id }}';
+        // Extract date from URL path directly or pass it securely
+        const date = window.location.pathname.split('/').pop();
+
+        let lastSummary = null;
+
+        function fetchAndUpdate() {
+            // Add timestamp to prevent browser caching
+            fetch(`/api/session_details_json/${clientId}/${date}?_=${new Date().getTime()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateUI(data.rows, data.summary);
+                    }
+                })
+                .catch(err => console.error("Update failed", err));
+        }
+
+        function updateUI(rows, summary) {
+            // 1. Update Summary Header
+            const summaryDiv = document.querySelector('.summary-header');
+            if (summaryDiv && summary) {
+                const newSummaryHTML = `
+            Sessions: ${summary.sessions} | Active: ${summary.active} | Trades: ${summary.trades} | Net PNL: ₹${summary.net_pnl.toFixed(2)} | Mode: ${summary.mode}
+        `;
+                // Only update DOM if content changed to avoid flicker
+                // Normalize spaces for comparison
+                if (summaryDiv.innerText.replace(/\s+/g, ' ').trim() !== newSummaryHTML.replace(/\s+/g, ' ').trim()) {
+                    summaryDiv.innerText = newSummaryHTML.trim();
+                }
+            }
+
+            // 2. Update Table Content
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                // Rebuild rows from scratch
+                let rowsHTML = '';
+                rows.forEach(row => {
+                    const rowClass = row.logout === 'Active' && row.trades === 0 ? 'class="empty-active"' : '';
+
+                    rowsHTML += `<tr ${rowClass}>
+                        <td>${row.date}</td>
+                        <td>${row.login}</td>
+                        <td>${row.logout}</td>
+                        <td>${row.mode}</td>
+                        <td>${row.trades !== 0 ? row.trades : ''}</td>
+                        <td>₹${row.net_pnl.toFixed(2)}</td>
+                    </tr>`;
+                });
+
+                // Compare with current table HTML to decide if update needed
+                if (tbody.innerHTML.replace(/\s/g, '') !== rowsHTML.replace(/\s/g, '')) {
+                    tbody.innerHTML = rowsHTML;
+                    // Re-apply the logic to sort Active rows to bottom if needed
+                    sortActiveRows();
+                }
+            } else if (rows.length > 0) {
+                // If we have rows but no tbody currently (e.g. "No data" message shown), refresh to build full table structure
+                window.location.reload();
+            }
+        }
+
+        function sortActiveRows() {
+            const tbody = document.querySelector('tbody');
+            if (tbody) {
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const emptyActiveRows = rows.filter(row => row.classList.contains('empty-active'));
+                const otherRows = rows.filter(row => !row.classList.contains('empty-active'));
+
+                if (emptyActiveRows.length > 0) {
+                    tbody.innerHTML = '';
+                    otherRows.forEach(row => tbody.appendChild(row));
+                    emptyActiveRows.forEach(row => tbody.appendChild(row));
+                }
+            }
+        }
+
+        // Poll every 3 seconds
+        setInterval(fetchAndUpdate, 3000);
+
+        // Run once on load to ensure sorting
+        document.addEventListener('DOMContentLoaded', sortActiveRows);
+    </script>
+</body>
+
+</html>

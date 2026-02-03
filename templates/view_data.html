@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ db_name.replace('_', ' ').title() }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            margin: 0;
+        }
+
+        .back-btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: #5a67d8;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+        }
+
+        .date-filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .filter-btn.active {
+            background: #4c51bf;
+            box-shadow: 0 4px 12px rgba(76, 81, 191, 0.3);
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .apply-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .apply-btn:hover {
+            background: #059669;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: border 0.3s ease;
+        }
+
+        .table-container.updated {
+            border: 3px solid #10b981;
+        }
+
+        .table-container.error {
+            border: 3px solid #ef4444;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tr:nth-child(even):hover {
+            background: #e8f4f8;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .view-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .view-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{ db_name.replace('_', ' ').title() }}</h1>
+            <a href="/" class="back-btn">← Back to Database Viewer</a>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Search..." id="searchInput">
+        </div>
+
+        {% if db_name == 'daily_trading_sessions' %}
+        <div class="date-filters">
+            <div class="filter-row">
+                <button class="filter-btn" onclick="setQuickFilter('today')">Today</button>
+                <button class="filter-btn" onclick="setQuickFilter('yesterday')">Yesterday</button>
+                <button class="filter-btn" onclick="setQuickFilter('thisWeek')">This Week</button>
+                <button class="filter-btn" onclick="setQuickFilter('lastWeek')">Last Week</button>
+                <button class="filter-btn" onclick="setQuickFilter('thisMonth')">This Month</button>
+            </div>
+            <div class="filter-row">
+                <select class="filter-select" id="monthSelect">
+                    <option value="">Select Month</option>
+                </select>
+                <input type="date" class="filter-input" id="customDate" placeholder="Select Date">
+                <button class="apply-btn" onclick="applyDateFilter()">Apply</button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="table-container" id="tableContainer">
+            {% if rows %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for column in columns %}
+                        <th>{{ column }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {% for row in rows %}
+                    <tr>
+                        {% for i in range(row|length) %}
+                        {% if columns[i] == 'View Button' %}
+                        <td><button class="view-btn"
+                                onclick="viewSessionDetails('{{ row[2] }}', '{{ row[1] }}')">View</button></td>
+                        {% else %}
+                        <td>{{ row[i] if row[i] else '' }}</td>
+                        {% endif %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="no-data">
+                <p>No data available in this table.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        let allRows = [];
+        let dataUpdateInterval;
+
+        const currentTable = '{{ db_name }}';
+
+        // Update intervals (ms)
+        const updateIntervals = {
+            'daily_trading_sessions': 5000,
+            'master_bot_data': 30000,
+            'client_bot_signups': 20000
+        };
+
+        // State Management - Default to Today
+        let filterState = {
+            mode: 'quick',
+            quickType: 'today',
+            customDate: '',
+            month: '',
+            search: ''
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.getElementById('tableBody');
+            if (tableBody) {
+                allRows = Array.from(tableBody.getElementsByTagName('tr'));
+            }
+
+            // Search Input Listener
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function (e) {
+                    filterState.search = e.target.value;
+                    saveFilterState();
+                    applyFilterState(false);
+                });
+            }
+
+            if (currentTable === 'daily_trading_sessions') {
+                initializeMonthDropdown();
+                loadFilterState(); // Restore state from storage
+                applyFilterState(true); // Apply the restored or default state
+            }
+
+            startDataUpdates();
+        });
+
+        window.addEventListener('beforeunload', function () {
+            if (dataUpdateInterval) clearInterval(dataUpdateInterval);
+        });
+
+        function startDataUpdates() {
+            const interval = updateIntervals[currentTable] || 10000;
+            dataUpdateInterval = setInterval(fetchLatestData, interval);
+        }
+
+        function fetchLatestData() {
+            // Add cache-busting timestamp
+            fetch(`/api/get-latest-data/${currentTable}?_=${new Date().getTime()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateTableData(data.rows);
+                        showUpdateIndicator('success');
+
+                        // Re-apply filter on new data (do NOT update inputs to prevent typing interruption)
+                        applyFilterState(false);
+                    } else {
+                        showUpdateIndicator('error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    showUpdateIndicator('error');
+                });
+        }
+
+        function showUpdateIndicator(type) {
+            const container = document.getElementById('tableContainer');
+            if (!container) return;
+            container.classList.remove('updated', 'error');
+
+            if (type === 'success') {
+                container.classList.add('updated');
+            } else {
+                container.classList.add('error');
+            }
+
+            setTimeout(() => {
+                container.classList.remove('updated', 'error');
+            }, 1000);
+        }
+
+        function updateTableData(newRows) {
+            const tableBody = document.getElementById('tableBody');
+            if (!tableBody) return;
+
+            // Save scroll position
+            const scrollPos = document.documentElement.scrollTop;
+
+            tableBody.innerHTML = '';
+
+            newRows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    if (currentTable === 'daily_trading_sessions' && index === row.length - 1) {
+                        td.innerHTML = `<button class="view-btn" onclick="viewSessionDetails('${row[2]}', '${row[1]}')">View</button>`;
+                    } else {
+                        td.textContent = cell || '';
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            allRows = Array.from(tableBody.getElementsByTagName('tr'));
+
+            // Restore scroll position
+            document.documentElement.scrollTop = scrollPos;
+        }
+
+        // --- Filter Logic ---
+
+        function loadFilterState() {
+            try {
+                // Use sessionStorage for tab-persistence (survives refresh, not close)
+                const saved = sessionStorage.getItem(`viewData_filterState_${currentTable}`);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    filterState = { ...filterState, ...parsed };
+                }
+            } catch (e) {
+                console.error("State load error", e);
+            }
+        }
+
+        function saveFilterState() {
+            sessionStorage.setItem(`viewData_filterState_${currentTable}`, JSON.stringify(filterState));
+        }
+
+        function setQuickFilter(type) {
+            filterState.mode = 'quick';
+            filterState.quickType = type;
+            filterState.customDate = '';
+            filterState.month = '';
+            saveFilterState();
+            applyFilterState(true);
+        }
+
+        function applyDateFilter() {
+            const cDate = document.getElementById('customDate').value;
+            const mSelect = document.getElementById('monthSelect').value;
+
+            filterState.mode = 'custom';
+            filterState.customDate = cDate;
+            filterState.month = mSelect;
+
+            saveFilterState();
+            applyFilterState(true);
+        }
+
+        function applyFilterState(updateInputs) {
+            // 1. Update UI Inputs/Buttons based on State 
+            if (updateInputs) {
+                const searchInput = document.getElementById('searchInput');
+                // Only update search input if not focused (prevent overwrite while typing)
+                if (searchInput && document.activeElement !== searchInput) {
+                    searchInput.value = filterState.search || '';
+                }
+
+                if (currentTable === 'daily_trading_sessions') {
+                    const buttons = document.querySelectorAll('.filter-btn');
+                    buttons.forEach(btn => btn.classList.remove('active'));
+
+                    if (filterState.mode === 'quick') {
+                        // In Quick mode, show the calculated date in input for reference
+                        const cDate = document.getElementById('customDate');
+                        const mSelect = document.getElementById('monthSelect');
+
+                        let btnText = '';
+                        let displayDate = '';
+                        const now = new Date();
+
+                        switch (filterState.quickType) {
+                            case 'today':
+                                btnText = 'Today';
+                                displayDate = formatDate(now);
+                                break;
+                            case 'yesterday':
+                                btnText = 'Yesterday';
+                                const y = new Date(now); y.setDate(y.getDate() - 1);
+                                displayDate = formatDate(y);
+                                break;
+                            case 'thisWeek': btnText = 'This Week'; break;
+                            case 'lastWeek': btnText = 'Last Week'; break;
+                            case 'thisMonth': btnText = 'This Month'; break;
+                        }
+
+                        if (cDate) cDate.value = displayDate;
+                        if (mSelect) mSelect.value = '';
+
+                        for (let btn of buttons) {
+                            if (btn.textContent === btnText) {
+                                btn.classList.add('active'); break;
+                            }
+                        }
+                    } else {
+                        // Custom Mode
+                        const cDate = document.getElementById('customDate');
+                        const mSelect = document.getElementById('monthSelect');
+                        if (cDate) cDate.value = filterState.customDate;
+                        if (mSelect) mSelect.value = filterState.month;
+                    }
+                }
+            }
+
+            // 2. Calculate Date Range
+            let start = null, end = null;
+            if (currentTable === 'daily_trading_sessions') {
+                if (filterState.mode === 'quick') {
+                    const range = getRangeForQuickType(filterState.quickType);
+                    start = range.start;
+                    end = range.end;
+                } else {
+                    if (filterState.month) {
+                        const [pixYear, pixMonth] = filterState.month.split('-');
+                        start = new Date(pixYear, pixMonth - 1, 1);
+                        end = new Date(pixYear, pixMonth, 0);
+                    } else if (filterState.customDate) {
+                        start = new Date(filterState.customDate);
+                        end = new Date(filterState.customDate);
+                    }
+                }
+
+                if (start) start.setHours(0, 0, 0, 0);
+                if (end) end.setHours(23, 59, 59, 999);
+            }
+
+            // 3. Apply to Rows
+            const searchTerm = (filterState.search || '').toLowerCase();
+
+            allRows.forEach(row => {
+                let show = true;
+
+                if (currentTable === 'daily_trading_sessions' && start && end) {
+                    const dateCell = row.cells[1];
+                    if (dateCell) {
+                        const cellText = dateCell.textContent.trim();
+                        // Handle Date Format
+                        const rowDate = new Date(cellText);
+                        if (isNaN(rowDate.getTime())) {
+                            show = false;
+                        } else {
+                            if (rowDate < start || rowDate > end) {
+                                show = false;
+                            }
+                        }
+                    }
+                }
+
+                if (show && searchTerm) {
+                    const rowText = row.textContent.toLowerCase();
+                    if (!rowText.includes(searchTerm)) {
+                        show = false;
+                    }
+                }
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        function getRangeForQuickType(type) {
+            const now = new Date();
+            let start, end;
+
+            switch (type) {
+                case 'today':
+                    start = new Date(now);
+                    end = new Date(now);
+                    break;
+                case 'yesterday':
+                    start = new Date(now);
+                    start.setDate(now.getDate() - 1);
+                    end = new Date(start);
+                    break;
+                case 'thisWeek':
+                    start = new Date(now);
+                    start.setDate(now.getDate() - now.getDay());
+                    end = new Date(now);
+                    break;
+                case 'lastWeek':
+                    start = new Date(now);
+                    start.setDate(now.getDate() - now.getDay() - 7);
+                    end = new Date(start);
+                    end.setDate(start.getDate() + 6);
+                    break;
+                case 'thisMonth':
+                    start = new Date(now.getFullYear(), now.getMonth(), 1);
+                    end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                    break;
+                default:
+                    start = new Date(now);
+                    end = new Date(now);
+            }
+            return { start, end };
+        }
+
+        function initializeMonthDropdown() {
+            const monthSelect = document.getElementById('monthSelect');
+            if (!monthSelect) return;
+            if (monthSelect.options.length > 1) return;
+
+            const now = new Date();
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            for (let i = 0; i < 6; i++) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const monthName = months[date.getMonth()];
+                const year = date.getFullYear();
+                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = `${monthName} ${year}`;
+                monthSelect.appendChild(option);
+            }
+        }
+
+        function formatDate(d) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+
+        function viewSessionDetails(clientId, date) {
+            window.location.href = `/session_details/${clientId}/${date}`;
+        }
+    </script>
+</body>
+
+</html>
